@@ -19,3 +19,6 @@ with open(data_filename, 'r') as f:
 print 'Read:', len(all_instances), 'instances from ', data_filename
 
 print 'First Instance', all_instances[0][0]
+
+import os
+print os.getcwd()
