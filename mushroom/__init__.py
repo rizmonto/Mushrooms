@@ -1,24 +1,34 @@
 import simple_ml
 
-#mushroom = ['a', ' b ', '\nc', 'd']
+attribute_names = ['class', 
+                   'cap-shape', 'cap-surface', 'cap-color', 
+                   'bruises?', 
+                   'odor', 
+                   'gill-attachment', 'gill-spacing', 'gill-size', 'gill-color', 
+                   'stalk-shape', 'stalk-root', 
+                   'stalk-surface-above-ring', 'stalk-surface-below-ring', 
+                   'stalk-color-above-ring', 'stalk-color-below-ring',
+                   'veil-type', 'veil-color', 
+                   'ring-number', 'ring-type', 
+                   'spore-print-color', 
+                   'population', 
+                   'habitat']
 
-#print mushroom.index('a', )
-
-#print range(len(mushroom)), 'omg'
-
-#simple_ml.print_attribute_names_and_values(['p', 'a', 'f'], ['awesome', 'badass', 'hamster'])
-
-all_instances = []; #initialize list
+all_instances2 = [] #initialize list
 data_filename = 'agaricus-lepiota.data'
+clean_instances = []
 
-with open(data_filename, 'r') as f:
-    for line in f:
-        #clean each line and add into an array
-        all_instances.append(line.strip().split(','))
+all_instances2 = simple_ml.load_instances(data_filename)
 
-print 'Read:', len(all_instances), 'instances from ', data_filename
 
-print 'First Instance', all_instances[0][0]
+print '|'.join(all_instances2[0])
 
-import os
-print os.getcwd()
+for instance in all_instances2:
+    if '?' not in instance:
+        clean_instances.append(instance)
+
+print len(clean_instances)
+
+kaboom = {'a' : 'apple', 'b' : 'banana'}
+
+print kaboom['a']
