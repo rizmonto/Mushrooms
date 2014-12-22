@@ -21,14 +21,17 @@ clean_instances = []
 all_instances2 = simple_ml.load_instances(data_filename)
 
 
-print '|'.join(all_instances2[0])
+#print '|'.join(all_instances2[0])
 
 for instance in all_instances2:
     if '?' not in instance:
         clean_instances.append(instance)
 
-print len(clean_instances)
+#print len(clean_instances)
 
 kaboom = {'a' : 'apple', 'b' : 'banana'}
 
-print kaboom['a']
+test = 'bam : sexy : awesome : omg'
+test2 = []
+test2 = test.strip().split(':')
+print test2
