@@ -1,37 +1,35 @@
-import simple_ml
-
-attribute_names = ['class', 
-                   'cap-shape', 'cap-surface', 'cap-color', 
-                   'bruises?', 
-                   'odor', 
-                   'gill-attachment', 'gill-spacing', 'gill-size', 'gill-color', 
-                   'stalk-shape', 'stalk-root', 
-                   'stalk-surface-above-ring', 'stalk-surface-below-ring', 
-                   'stalk-color-above-ring', 'stalk-color-below-ring',
-                   'veil-type', 'veil-color', 
-                   'ring-number', 'ring-type', 
-                   'spore-print-color', 
-                   'population', 
-                   'habitat']
+#from simple_ml import clean_instances_of_errant, load_attribute_names_and_values, load_instances, load_attribute_values, load_attributes, attribute_value_counts
+from simple_ml import*
 
 all_instances2 = [] #initialize list
 data_filename = 'agaricus-lepiota.data'
+attribute_filename = 'agaricus-lepiota.attributes'
 clean_instances = []
 
-all_instances2 = simple_ml.load_instances(data_filename)
-
+all_instances2 = load_instances(data_filename)
 
 #print '|'.join(all_instances2[0])
 
-for instance in all_instances2:
-    if '?' not in instance:
-        clean_instances.append(instance)
+attribute_values = []
+attribute_values = load_attribute_values(attribute_filename)
 
-#print len(clean_instances)
+'''
+attribute_filename = 'agaricus-lepiota.attributes'
+attribute_names_and_values = load_attribute_names_and_values(attribute_filename)
+print 'Read', len(attribute_names_and_values), 'attribute values from', attribute_filename
+print 'First attribute name:', attribute_names_and_values[0]['name'], '; values:', attribute_names_and_values[0]['values']
+'''
+clean_instances = clean_instances_of_errant(data_filename)
+#print len(clean_instances), 'clean instances'
+#print attribute_values[0]
+#print clean_instances
+attribute_names = load_attributes(attribute_filename)
 
-kaboom = {'a' : 'apple', 'b' : 'banana'}
 
-test = 'bam : sexy : awesome : omg'
-test2 = []
-test2 = test.strip().split(':')
-print test2
+#index = attribute_value_counts(clean_instances, 'habitat', attribute_names)
+#print index
+
+#index = attribute_value_proportion(clean_instances, 'cap-shape', attribute_names)
+#print index
+
+print_all_attribute_value_counts(clean_instances, attribute_names)
