@@ -25,11 +25,16 @@ clean_instances = clean_instances_of_errant(data_filename)
 #print clean_instances
 attribute_names = load_attributes(attribute_filename)
 
+index = attribute_value_counts(clean_instances, 'classes', attribute_names)
+print index
 
-#index = attribute_value_counts(clean_instances, 'habitat', attribute_names)
-#print index
+index2 = attribute_value_proportion(clean_instances, 'classes', attribute_names)
+print index2
 
 #index = attribute_value_proportion(clean_instances, 'cap-shape', attribute_names)
 #print index
 
-print_all_attribute_value_counts(clean_instances, attribute_names)
+#print_all_attribute_value_counts(clean_instances, attribute_names)
+
+#entropy(clean_instances, attribute_names)
+

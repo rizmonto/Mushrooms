@@ -6,6 +6,7 @@ Created on Dec 16, 2014
 from _collections import defaultdict
 import operator
 from decimal import Decimal
+import math
 
 def print_attribute_names_and_values(instance, attribute_names):
     '''Prints the attribute names and values of an instance'''
@@ -35,7 +36,7 @@ def load_attributes(filename):
 
 def load_attribute_values(filename):
     '''Returns a list of attribute values in a file.
-    
+
     The attribute values are represented as dictionaries, wherein the keys are abbreviations and the values are descriptions.
     filename is expected to have one attribute name and set of values per line, with the following format:
         name: value_description=value_abbreviation[,value_description=value_abbreviation]*
@@ -124,7 +125,7 @@ def attribute_value_counts(instances, attribute, attribute_names):
     return instance_value_counts
 
 def attribute_value_proportion(instances, attribute, attribute_names):
-    '''Returns a defaultdict containing the counts of occurrences and prportion of each value of attribute in the list of
+    '''Returns a defaultdict containing the counts of occurrences and proportion of each value of attribute in the list of
     instances.attribute_names is the list we created above, where each element is the name of an attribute.'''
     attribute_value_counts = defaultdict(int)
     instance_value_counts = {}
@@ -155,5 +156,38 @@ def print_all_attribute_value_counts(instances, attribute_names):
     #for
     print instance_attribute_value_counts
 
-def entropy(instances):
+def entropy(instances, attribute_names):
+    '''Returns entropy of a data set of mushrooms'''
+    class_value_count = {}
+    class_value_count = attribute_value_counts(instances, 'classes', attribute_names)
+    number_of_instances = len(instances)
+    #calculate edible first
+    e = float(class_value_count['e'])
+    p = float(class_value_count['p'])
+    side_a = (e / number_of_instances) * math.log((e / number_of_instances), 2)
+    #then calculate poisonous next
+    side_b = (p / number_of_instances) * math.log((p / number_of_instances), 2)
+    entropy_calculation = -side_a - side_b
+    print entropy_calculation
+
+def entropy_generic(instances, attribute_names, entropy_attribute):
+    '''Returns entropy of a data set of mushrooms'''
+    class_value_count = {}
+    class_value_count = attribute_value_counts(instances, entropy_attribute, attribute_names)
+    number_of_instances = len(instances)
+
+    e = float(class_value_count['e'])
+    p = float(class_value_count['p'])
+    side_a = (e / number_of_instances) * math.log((e / number_of_instances), 2)
+    #then calculate poisonous next
+    side_b = (p / number_of_instances) * math.log((p / number_of_instances), 2)
+    entropy_calculation = -side_a - side_b
+    print entropy_calculation
+
+def information_gain(clean_instances, index):
+    '''Prints information gain of a set of instances'''
+    for instance in clean_instances:
+        print instance[index]
+    
+    
         
