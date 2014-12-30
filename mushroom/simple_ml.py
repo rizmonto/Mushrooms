@@ -124,6 +124,26 @@ def attribute_value_counts(instances, attribute, attribute_names):
         instance_value_counts[instance_value.strip()] += 1
     return instance_value_counts
 
+def attribute_value_relative_edible_counts(instances, attribute, attribute_names):
+    '''Returns a dictionary with count of edibility based on attribute entered, used for entropy and information gain'''
+    attribute_value_counts = defaultdict(int)
+    instance_value_counts = {}
+    #find position of attribute in attribute_name
+    position_index = attribute_names.index(attribute)
+
+    #count occurrences of values in that position in the index list
+    for instance in instances:
+        #save the value of the attribute
+        instance_value = instance[position_index]
+        #check if it's edible and not in the list
+        if instance_value not in instance_value_counts and instance[0] == 'e':
+            #add to dictionary, but strip beforehand
+            instance_value_counts[instance_value.strip()] = 0
+        #increment at dictionary key, make sure you strip beforehand, and only do this if it's edible
+        if instance[0] == 'e':
+            instance_value_counts[instance_value.strip()] += 1
+    return instance_value_counts
+
 def attribute_value_proportion(instances, attribute, attribute_names):
     '''Returns a defaultdict containing the counts of occurrences and proportion of each value of attribute in the list of
     instances.attribute_names is the list we created above, where each element is the name of an attribute.'''
@@ -167,27 +187,33 @@ def entropy(instances, attribute_names):
     side_a = (e / number_of_instances) * math.log((e / number_of_instances), 2)
     #then calculate poisonous next
     side_b = (p / number_of_instances) * math.log((p / number_of_instances), 2)
-    entropy_calculation = -side_a - side_b
-    print entropy_calculation
+    entropy_calculation = - side_a - side_b
+    return entropy_calculation
 
 def entropy_generic(instances, attribute_names, entropy_attribute):
-    '''Returns entropy of a data set of mushrooms'''
+    '''Returns dictionary of entropy of a data set of attributes values'''
     class_value_count = {}
-    class_value_count = attribute_value_counts(instances, entropy_attribute, attribute_names)
-    number_of_instances = len(instances)
+    class_proportion_count = {}
+    attribute_entropies = {}
 
-    e = float(class_value_count['e'])
-    p = float(class_value_count['p'])
-    side_a = (e / number_of_instances) * math.log((e / number_of_instances), 2)
-    #then calculate poisonous next
-    side_b = (p / number_of_instances) * math.log((p / number_of_instances), 2)
-    entropy_calculation = -side_a - side_b
-    print entropy_calculation
+    #then save the proportion of each
+    class_proportion_count = attribute_value_proportion(instances, entropy_attribute, attribute_names)
 
-def information_gain(clean_instances, index):
+    for key in class_proportion_count.keys():
+        temp_entropy = - class_proportion_count[key] * math.log(class_proportion_count[key])
+        attribute_entropies[key] = temp_entropy
+    
+    TODO - Take into account proper edible count proportions
+    return attribute_entropies
+
+def information_gain(parent_entropy, instances, attribute_names, entropy_attribute):
     '''Prints information gain of a set of instances'''
-    for instance in clean_instances:
-        print instance[index]
+    class_proportion_count = attribute_value_proportion(instances, entropy_attribute, attribute_names)
+    attribute_entropies = entropy_generic(instances, attribute_names, entropy_attribute)
+    aggregate_entropy = 0
     
-    
+    for key in class_proportion_count.keys():
+        aggregate_entropy =  aggregate_entropy + class_proportion_count[key] * attribute_entropies[key]
+    info_gain = parent_entropy - aggregate_entropy
+    return info_gain
         

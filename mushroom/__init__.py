@@ -25,16 +25,29 @@ clean_instances = clean_instances_of_errant(data_filename)
 #print clean_instances
 attribute_names = load_attributes(attribute_filename)
 
-index = attribute_value_counts(clean_instances, 'classes', attribute_names)
+index = attribute_value_counts(clean_instances, 'bruises', attribute_names)
 print index
 
-index2 = attribute_value_proportion(clean_instances, 'classes', attribute_names)
+index2 = attribute_value_proportion(clean_instances, 'bruises', attribute_names)
 print index2
 
 #index = attribute_value_proportion(clean_instances, 'cap-shape', attribute_names)
 #print index
 
-#print_all_attribute_value_counts(clean_instances, attribute_names)
 
-#entropy(clean_instances, attribute_names)
+parent_entropy = entropy(clean_instances, attribute_names)
+#print parent_entropy
+
+generic_entropy = entropy_generic(clean_instances, attribute_names, 'bruises')
+print generic_entropy
+
+#info_gain = {} 
+
+#info_gain = information_gain(parent_entropy, clean_instances, attribute_names, 'bruises')
+#print info_gain
+
+#for name in attribute_names:
+    #info_gain[name] = information_gain(parent_entropy, clean_instances, attribute_names, name)
+
+print attribute_value_relative_edible_counts(clean_instances, 'bruises', attribute_names)
 
