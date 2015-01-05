@@ -7,6 +7,8 @@ from _collections import defaultdict
 import operator
 from decimal import Decimal
 import math
+import collections
+from operator import contains
 
 def print_attribute_names_and_values(instance, attribute_names):
     '''Prints the attribute names and values of an instance'''
@@ -101,7 +103,7 @@ def clean_instances_of_errant(filename):
     with open(filename) as f:
         for line in f:
             if '?' not in line:
-                clean_instances_list.append(line.split(','))
+                clean_instances_list.append(line.strip().split(','))
     return clean_instances_list
 
 
@@ -136,7 +138,8 @@ def attribute_value_relative_edible_counts(instances, attribute, attribute_names
         #save the value of the attribute
         instance_value = instance[position_index]
         #check if it's edible and not in the list
-        if instance_value not in instance_value_counts and instance[0] == 'e':
+        #if instance_value not in instance_value_counts and instance[0] == 'e': deprecated
+        if instance_value not in instance_value_counts: #takes into account zero occurence attributes
             #add to dictionary, but strip beforehand
             instance_value_counts[instance_value.strip()] = 0
         #increment at dictionary key, make sure you strip beforehand, and only do this if it's edible
@@ -169,7 +172,6 @@ def attribute_value_proportion(instances, attribute, attribute_names):
 def print_all_attribute_value_counts(instances, attribute_names):
     '''Returns printing of all each attribute name, value abbreviation, count of occurences, then proporation'''
     instance_attribute_value_counts = {}
-    instance_attribute_value_counts_proportions = {}
     for attribute in attribute_names:
         #add counts to dictionary with attribute
         instance_attribute_value_counts[attribute] = attribute_value_counts(instances, attribute, attribute_names)
@@ -192,18 +194,37 @@ def entropy(instances, attribute_names):
 
 def entropy_generic(instances, attribute_names, entropy_attribute):
     '''Returns dictionary of entropy of a data set of attributes values'''
-    class_value_count = {}
-    class_proportion_count = {}
+    attribute_value_count = {}
+    attribute_edible_count = {}
     attribute_entropies = {}
 
-    #then save the proportion of each
-    class_proportion_count = attribute_value_proportion(instances, entropy_attribute, attribute_names)
+    attribute_value_count = attribute_value_counts(instances, entropy_attribute, attribute_names)
+    #get relative edible count    
+    attribute_edible_count = attribute_value_relative_edible_counts(instances, entropy_attribute, attribute_names)
+    #print attribute_edible_count
+    for key,value in attribute_edible_count.iteritems():
+        #calculate the proportion of edible
+        attribute_and_edible = float(value)/attribute_value_count[key]
 
-    for key in class_proportion_count.keys():
-        temp_entropy = - class_proportion_count[key] * math.log(class_proportion_count[key])
-        attribute_entropies[key] = temp_entropy
-    
-    TODO - Take into account proper edible count proportions
+        #save the inedible count
+        inedible_count = attribute_value_count[key] - value
+
+        #calculate the proportion of inedible
+        attribute_and_inedible = float(inedible_count)/attribute_value_count[key]
+
+        if attribute_and_edible != 0: #can't take the log of 0
+            calc1 = math.log(attribute_and_edible, 2) #log base 2
+        else:
+            calc1 = 0
+        
+        if attribute_and_inedible != 0:
+            calc2 = math.log(attribute_and_inedible, 2)
+        else:
+            calc2 = 0
+
+        attribute_entropies[key] = - ((attribute_and_edible * calc1) + (attribute_and_inedible * calc2))
+
+    #TODO - Take into account proper edible count proportions
     return attribute_entropies
 
 def information_gain(parent_entropy, instances, attribute_names, entropy_attribute):
@@ -211,9 +232,120 @@ def information_gain(parent_entropy, instances, attribute_names, entropy_attribu
     class_proportion_count = attribute_value_proportion(instances, entropy_attribute, attribute_names)
     attribute_entropies = entropy_generic(instances, attribute_names, entropy_attribute)
     aggregate_entropy = 0
-    
+
     for key in class_proportion_count.keys():
+        #print class_proportion_count[key]
         aggregate_entropy =  aggregate_entropy + class_proportion_count[key] * attribute_entropies[key]
     info_gain = parent_entropy - aggregate_entropy
     return info_gain
-        
+
+def split_instances(instances, attribute_index):
+    '''Returns a list of dictionaries, splitting a list of instances according to their values of a specified attribute''
+    The key of each dictionary is a distinct value of attribute_index,
+    and the value of each dictionary is a list representing the subset of instances that have that value for the attribute'''
+    partitions = defaultdict(list)
+    for instance in instances:
+        #every time an attribute value occurs, add the entire instance to that attribute value occurrence
+        partitions[instance[attribute_index]].append(instance)
+    return partitions
+
+def choose_best_attribute_index(instances, attribute_names):
+    '''Returns the index in the list of candidate_attribute_indexes that provides the highest information gain if instances 
+    are split based on that attribute index.'''
+    info_gain = {}
+    full_attribute_names = load_attributes('agaricus-lepiota.attributes')
+    parent_entropy = entropy(instances, full_attribute_names)
+    #skip over the first class, edible/poisonous
+    for name in attribute_names:
+        info_gain[name] = information_gain(parent_entropy, instances, full_attribute_names, name)
+    #sort the list and returns a tuple
+    sorted_info_gain = sorted(info_gain.items(), key = operator.itemgetter(1), reverse = True)
+
+    #return the attribute index with the highest info gain, the top attribute
+    if sorted_info_gain[0][0] in full_attribute_names:
+        return full_attribute_names.index(sorted_info_gain[0][0], )
+
+def majority_value(instances, class_index = 0):
+    '''returns the most frequently occurring value of class_index in instances'''
+    class_values = []
+    for instance in instances:
+        class_values.append(instance[class_index])
+
+    class_counts = collections.Counter(class_values)
+    #return class_counts.most_common(1)
+    #access index key of most common occurring key
+    return class_counts.most_common(1)[0][0]
+
+def create_decision_tree(instances, candidate_attribute_indexes = None, class_index = 0, default_class = None, trace = 0):
+    '''Returns a new decision tree trained on a list of instances.
+
+    The tree is constructed by recursively selecting and splitting instances based on 
+    the highest information_gain of the candidate_attribute_indexes.
+
+    The class label is found in position class_index.
+
+    The default_class is the majority value for the current node's parent in the tree.
+    A positive (int) trace value will generate trace information with increasing levels of indentation.
+
+    Derived from the simplified ID3 algorithm presented in Building Decision Trees in Python by Christopher Roach,
+    http://www.onlamp.com/pub/a/python/2006/02/09/ai_decision_trees.html?page=3'''
+
+    #if no candidate_attribute_indexes are provided, assume that we will use all but the target_attribute_index
+    if candidate_attribute_indexes is None:
+        candidate_attribute_indexes = range(len(instances[0]))
+        candidate_attribute_indexes.remove(class_index)
+
+    #add occurences of edible or poisonous into a dict Counter
+    class_labels_and_counts = collections.Counter([instance[class_index] for instance in instances])
+
+    #if the dataset is empty or the candidate attributes list is empty, return the default value
+    if not instances or not candidate_attribute_indexes:
+        if trace:
+            print '{}Using default class {}'.format('< ' * trace, default_class)
+        return default_class
+
+    #if all the instances have the same class label, return that class label
+    elif len(class_labels_and_counts) == 1:
+        class_label = class_labels_and_counts.most_common(1)[0][0]
+        if trace:
+            print '{}All {} instances have label {}'.format('< ' * trace, len(instances), class_label)
+        return class_label
+    else:
+        default_class = majority_value(instances, class_index)
+
+        # Choose the next best attribute index to best classify the instances
+        #best_index = choose_best_attribute_index(instances, candidate_attribute_indexes, class_index)
+        best_index = choose_best_attribute_index(instances, candidate_attribute_indexes)
+        if trace:
+            print '{}Creating tree node for attribute index {}'.format('> ' * trace, best_index)
+
+        # Create a new decision tree node with the best attribute index and an empty dictionary object (for now)
+        tree = {best_index:{}}
+
+        # Create a new decision tree sub-node (branch) for each of the values in the best attribute field
+        partitions = split_instances(instances, best_index)
+
+        # Remove that attribute from the set of candidates for further splits
+        remaining_candidate_attribute_indexes = [i for i in candidate_attribute_indexes if i != best_index]
+
+        for attribute_value in partitions:
+            if trace:
+                print '{}Creating subtree for value {} ({}, {}, {}, {})'.format(
+                    '> ' * trace,
+                    attribute_value,
+                    len(partitions[attribute_value]),
+                    len(remaining_candidate_attribute_indexes),
+                    class_index,
+                    default_class)
+
+            # Create a subtree for each value of the the best attribute
+            subtree = create_decision_tree(partitions[attribute_value], remaining_candidate_attribute_indexes,
+                class_index,
+                default_class,
+                trace + 1 if trace else 0)
+
+            # Add the new subtree to the empty dictionary object in the new tree/node we just created
+            tree[best_index][attribute_value] = subtree
+
+    return tree
+    
