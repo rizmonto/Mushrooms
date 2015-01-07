@@ -287,13 +287,21 @@ def create_decision_tree(instances, candidate_attribute_indexes = None, class_in
     The default_class is the majority value for the current node's parent in the tree.
     A positive (int) trace value will generate trace information with increasing levels of indentation.
 
+    class_index is the target attribute to classify by, in this case it is poisonous or edible
+
+    candidate_attribute_indexes is the attributes the tree will create against
+
     Derived from the simplified ID3 algorithm presented in Building Decision Trees in Python by Christopher Roach,
     http://www.onlamp.com/pub/a/python/2006/02/09/ai_decision_trees.html?page=3'''
 
+    attribute_list = load_attributes('agaricus-lepiota.attributes')
+
     #if no candidate_attribute_indexes are provided, assume that we will use all but the target_attribute_index
     if candidate_attribute_indexes is None:
-        candidate_attribute_indexes = range(len(instances[0]))
-        candidate_attribute_indexes.remove(class_index)
+        #candidate_attribute_indexes = range(len(instances[0]))
+        candidate_attribute_indexes = load_attributes('agaricus-lepiota.attributes')
+        #delete classes attribute at index 0
+        del candidate_attribute_indexes[0]
 
     #add occurences of edible or poisonous into a dict Counter
     class_labels_and_counts = collections.Counter([instance[class_index] for instance in instances])
@@ -326,7 +334,16 @@ def create_decision_tree(instances, candidate_attribute_indexes = None, class_in
         partitions = split_instances(instances, best_index)
 
         # Remove that attribute from the set of candidates for further splits
-        remaining_candidate_attribute_indexes = [i for i in candidate_attribute_indexes if i != best_index]
+        #remaining_candidate_attribute_indexes = [i for i in candidate_attribute_indexes if i != best_index] DEPRECATED
+        #remove the next best index
+        print best_index
+        #find the attribute to remove from the master list of attributes
+        attribute_to_remove = attribute_list[best_index]
+        #find the index of the attribute to remove
+        index_to_remove = candidate_attribute_indexes.index(attribute_to_remove, )
+        #finally, remove the attribute at that candidate index level
+        del candidate_attribute_indexes[index_to_remove]
+        remaining_candidate_attribute_indexes = candidate_attribute_indexes
 
         for attribute_value in partitions:
             if trace:
@@ -348,4 +365,24 @@ def create_decision_tree(instances, candidate_attribute_indexes = None, class_in
             tree[best_index][attribute_value] = subtree
 
     return tree
+
+def classify(tree, instance, default_class=None):
+    '''Returns a classification label for instance, given a decision tree
+    default_class is the default classification, in this case, whether edible or poisonous'''
+    #if tree is empty
+    if not tree:
+        return default_class
+    #if tree is NOT a dict then we've got a problem
+    if not isinstance(tree, dict): 
+        return tree
+    #return the first key of the dict
+    attribute_index = tree.keys()[0]
+    #return the first value of the dict
+    attribute_values = tree.values()[0]
+    #save the attribute value of the instance of hte highest entropy attribute
+    instance_attribute_value = instance[attribute_index]
+    #if that attribute value was not found in the value set
+    if instance_attribute_value not in attribute_values:
+        return default_class
+    return classify(attribute_values[instance_attribute_value], instance, default_class)
     

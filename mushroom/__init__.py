@@ -1,7 +1,7 @@
 #from simple_ml import clean_instances_of_errant, load_attribute_names_and_values, load_instances, load_attribute_values, load_attributes, attribute_value_counts
 from simple_ml import*
 from _collections import*
-from sqlite3 import collections
+from pprint import pprint
 
 all_instances2 = [] #initialize list
 data_filename = 'agaricus-lepiota.data'
@@ -60,12 +60,31 @@ info_gain = {}
 partitions = split_instances(clean_instances, 5)
 #print [(partition, len(partitions[partition])) for partition in partitions]
 
-print majority_value(clean_instances)
+#print majority_value(clean_instances)
 
-info_gain = choose_best_attribute_index(clean_instances, attribute_names[1:])
-print info_gain
+#info_gain = choose_best_attribute_index(clean_instances, attribute_names[1:])
+#print info_gain
 
-tree = {5:{}}
-tree[5]['a'] = 'sexy'
-print tree
+#tree = {5:{}}
+#tree[5]['a'] = 'sexy'
+#print tree
+
+
+training_instances = clean_instances[:-20]
+testing_instances = clean_instances[-20:]
+tree = create_decision_tree(training_instances, trace=1) # remove trace=1 to turn off tracing
+#print tree
+
+#pprint(tree)
+
+print tree.keys()[0]
+print tree.values()[0]
+
+#class_labels_and_counts = collections.Counter([instance[5] for instance in clean_instances])
+#print class_labels_and_counts
+
+for instance in testing_instances:
+    predicted_label = classify(tree, instance)
+    actual_label = instance[0]
+    print 'predicted: {}; actual: {}'.format(predicted_label, actual_label)
 
