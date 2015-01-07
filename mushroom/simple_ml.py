@@ -372,17 +372,26 @@ def classify(tree, instance, default_class=None):
     #if tree is empty
     if not tree:
         return default_class
-    #if tree is NOT a dict then we've got a problem
+    '''if tree is NOT a dict, then it means that the final value of the target attribute has been found
+      ie. poisonous / edible '''
     if not isinstance(tree, dict): 
         return tree
     #return the first key of the dict
     attribute_index = tree.keys()[0]
+    print 'attribute index = ', attribute_index
     #return the first value of the dict
     attribute_values = tree.values()[0]
-    #save the attribute value of the instance of hte highest entropy attribute
+    #save the attribute value of the instance of the highest entropy attribute
     instance_attribute_value = instance[attribute_index]
-    #if that attribute value was not found in the value set
+    print 'instance attribute value = ', instance_attribute_value
+    #if that attribute value was not found in the value set for specific attribute
     if instance_attribute_value not in attribute_values:
         return default_class
+    #if it's not a pure attribute, then it sends the remaining tree into the classify function until it finds a match
     return classify(attribute_values[instance_attribute_value], instance, default_class)
+
+
+
+
+
     
