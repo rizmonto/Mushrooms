@@ -9,6 +9,7 @@ from decimal import Decimal
 import math
 import collections
 from operator import contains
+from mushroom import testing_instances
 
 def print_attribute_names_and_values(instance, attribute_names):
     '''Prints the attribute names and values of an instance'''
@@ -390,8 +391,15 @@ def classify(tree, instance, default_class=None):
     #if it's not a pure attribute, then it sends the remaining tree into the classify function until it finds a match
     return classify(attribute_values[instance_attribute_value], instance, default_class)
 
-
-
+def classification_accuracy(tree, testing_instances, class_index = 0, default_class = None):
+    '''Returns the accuracy of classifying testing_instances with tree, where the class label is in position class_index'''
+    num_correct = 0
+    for i in xrange(len(testing_instances)):
+        prediction = classify(tree, testing_instances[i], default_class)
+        actual_value = testing_instances[i][class_index]
+        if prediction == actual_value:
+            num_correct += 1
+    return float(num_correct) / len(testing_instances)
 
 
     
