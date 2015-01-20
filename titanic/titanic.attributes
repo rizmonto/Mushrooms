@@ -1,0 +1,12 @@
+PassengerID:
+Survived: yes = 1, no = 0
+Pclass: 1st = 1, 2nd = 2, 3rd = 3
+Name:
+Sex:
+Age:
+SibSp:
+Parch:
+Ticket:
+Fare:
+Cabin:
+Embarked:
