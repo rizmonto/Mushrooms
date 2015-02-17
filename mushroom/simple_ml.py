@@ -9,7 +9,6 @@ from decimal import Decimal
 import math
 import collections
 from operator import contains
-from mushroom import testing_instances
 
 def print_attribute_names_and_values(instance, attribute_names):
     '''Prints the attribute names and values of an instance'''
@@ -181,7 +180,6 @@ def print_all_attribute_value_counts(instances, attribute_names):
 
 def entropy(instances, attribute_names):
     '''Returns entropy of a data set of mushrooms'''
-    class_value_count = {}
     class_value_count = attribute_value_counts(instances, 'classes', attribute_names)
     number_of_instances = len(instances)
     #calculate edible first
@@ -217,7 +215,7 @@ def entropy_generic(instances, attribute_names, entropy_attribute):
             calc1 = math.log(attribute_and_edible, 2) #log base 2
         else:
             calc1 = 0
-        
+
         if attribute_and_inedible != 0:
             calc2 = math.log(attribute_and_inedible, 2)
         else:
@@ -225,7 +223,6 @@ def entropy_generic(instances, attribute_names, entropy_attribute):
 
         attribute_entropies[key] = - ((attribute_and_edible * calc1) + (attribute_and_inedible * calc2))
 
-    #TODO - Take into account proper edible count proportions
     return attribute_entropies
 
 def information_gain(parent_entropy, instances, attribute_names, entropy_attribute):
@@ -243,7 +240,9 @@ def information_gain(parent_entropy, instances, attribute_names, entropy_attribu
 def split_instances(instances, attribute_index):
     '''Returns a list of dictionaries, splitting a list of instances according to their values of a specified attribute''
     The key of each dictionary is a distinct value of attribute_index,
-    and the value of each dictionary is a list representing the subset of instances that have that value for the attribute'''
+    and the value of each dictionary is a list representing the subset of instances that have that value for the attribute.
+    And that each key of that dictionary value is an attribute value of that attribute index, and the value is the count
+    of occurrence of that attribute value.'''
     partitions = defaultdict(list)
     for instance in instances:
         #every time an attribute value occurs, add the entire instance to that attribute value occurrence
@@ -283,7 +282,7 @@ def create_decision_tree(instances, candidate_attribute_indexes = None, class_in
     The tree is constructed by recursively selecting and splitting instances based on 
     the highest information_gain of the candidate_attribute_indexes.
 
-    The class label is found in position class_index.
+    The target attrbute is found in position class_index.
 
     The default_class is the majority value for the current node's parent in the tree.
     A positive (int) trace value will generate trace information with increasing levels of indentation.
@@ -304,8 +303,9 @@ def create_decision_tree(instances, candidate_attribute_indexes = None, class_in
         #delete classes attribute at index 0
         del candidate_attribute_indexes[0]
 
-    #add occurences of edible or poisonous into a dict Counter
-    class_labels_and_counts = collections.Counter([instance[class_index] for instance in instances])
+    #add occurrences of edible or poisonous into a dict Counter
+    attribute_value_and_counts = collections.Counter([instance[class_index] for instance in instances])
+    #print 'length -', len(attribute_value_and_counts), ' - ', attribute_value_and_counts
 
     #if the dataset is empty or the candidate attributes list is empty, return the default value
     if not instances or not candidate_attribute_indexes:
@@ -313,17 +313,20 @@ def create_decision_tree(instances, candidate_attribute_indexes = None, class_in
             print '{}Using default class {}'.format('< ' * trace, default_class)
         return default_class
 
-    #if all the instances have the same class label, return that class label
-    elif len(class_labels_and_counts) == 1:
-        class_label = class_labels_and_counts.most_common(1)[0][0]
+    elif len(attribute_value_and_counts) == 1:
+        '''(Should only be hit during recursion iteration > 0)if all the instances 
+        have the same target_attribute (edible or poisonous) it returns the target
+        attribute value to the tree that initially called it'''
+        #return the attribute value
+        target_attribute = attribute_value_and_counts.most_common(1)[0][0]
         if trace:
-            print '{}All {} instances have label {}'.format('< ' * trace, len(instances), class_label)
-        return class_label
+            print '{}All {} instances have label {}'.format('< ' * trace, len(instances), target_attribute)
+        return target_attribute
+
+    #all the instances DO NOT have the same target_attribute (edible or poisonous)
     else:
         default_class = majority_value(instances, class_index)
-
         # Choose the next best attribute index to best classify the instances
-        #best_index = choose_best_attribute_index(instances, candidate_attribute_indexes, class_index)
         best_index = choose_best_attribute_index(instances, candidate_attribute_indexes)
         if trace:
             print '{}Creating tree node for attribute index {}'.format('> ' * trace, best_index)
@@ -335,7 +338,6 @@ def create_decision_tree(instances, candidate_attribute_indexes = None, class_in
         partitions = split_instances(instances, best_index)
 
         # Remove that attribute from the set of candidates for further splits
-        #remaining_candidate_attribute_indexes = [i for i in candidate_attribute_indexes if i != best_index] DEPRECATED
         #remove the next best index
         print best_index
         #find the attribute to remove from the master list of attributes
@@ -348,27 +350,30 @@ def create_decision_tree(instances, candidate_attribute_indexes = None, class_in
 
         for attribute_value in partitions:
             if trace:
-                print '{}Creating subtree for value {} ({}, {}, {}, {})'.format(
+                print '{}Creating subtree for value {} of attribute index {} ({}, {}, {}, {})'.format(
                     '> ' * trace,
                     attribute_value,
+                    best_index,
                     len(partitions[attribute_value]),
                     len(remaining_candidate_attribute_indexes),
                     class_index,
                     default_class)
 
-            # Create a subtree for each value of the the best attribute
+            '''Create a subtree for each value of the the best attribute and use the instances where the attribute value
+            is the key'''
             subtree = create_decision_tree(partitions[attribute_value], remaining_candidate_attribute_indexes,
                 class_index,
                 default_class,
                 trace + 1 if trace else 0)
 
-            # Add the new subtree to the empty dictionary object in the new tree/node we just created
+            '''Add the new subtree to the empty dictionary object in the new tree/node we just created.
+            This is capable of returning either a brand new tree or edible/poisonous based on the attribute_value used'''
             tree[best_index][attribute_value] = subtree
 
     return tree
 
 def classify(tree, instance, default_class=None):
-    '''Returns a classification label for instance, given a decision tree
+    '''Returns a classification label for instance by traversing the tree, given a decision tree
     default_class is the default classification, in this case, whether edible or poisonous'''
     #if tree is empty
     if not tree:
@@ -380,7 +385,7 @@ def classify(tree, instance, default_class=None):
     #return the first key of the dict
     attribute_index = tree.keys()[0]
     print 'attribute index = ', attribute_index
-    #return the first value of the dict
+    #return the first value of the dict/tree
     attribute_values = tree.values()[0]
     #save the attribute value of the instance of the highest entropy attribute
     instance_attribute_value = instance[attribute_index]

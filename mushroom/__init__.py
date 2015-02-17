@@ -39,7 +39,7 @@ attribute_names = load_attributes(attribute_filename)
 
 
 parent_entropy = entropy(clean_instances, attribute_names)
-#print parent_entropy
+print 'parent entropy = ', parent_entropy
 
 #generic_entropy = entropy_generic(clean_instances, attribute_names, 'cap-shape')
 #print generic_entropy
@@ -70,23 +70,27 @@ partitions = split_instances(clean_instances, 5)
 #print tree
 
 
-training_instances = clean_instances[:-20]
-testing_instances = clean_instances[-20:]
-tree = create_decision_tree(training_instances, trace=0) # remove trace=1 to turn off tracing
+training_instances = clean_instances[:-20] #everything except the last 20 items in the array
+testing_instances = clean_instances[-20:] #the last 20 items in the array
+tree = create_decision_tree(training_instances, trace=1) # remove trace=1 to turn off tracing
 #print tree
 
-#pprint(tree)
+pprint(tree)
 
 #print tree.keys()[0]
-print 'tree values - ', tree.values()[0]
+
+#print 'tree values - ', tree.values()[0]
+
 
 #class_labels_and_counts = collections.Counter([instance[5] for instance in clean_instances])
 #print class_labels_and_counts
+
 
 for instance in testing_instances:
     predicted_label = classify(tree, instance)
     actual_label = instance[0]
     print 'predicted: {}; actual: {} \n'.format(predicted_label, actual_label)
+
 
 '''
 test = {5:{'a':'e', 'n':{'c':'e'}}}
@@ -98,4 +102,7 @@ else:
     print 'DAM'
     '''
 
+sample = {5:{}}
+sample[5]['a'] = 'sexy'
+print sample
 
